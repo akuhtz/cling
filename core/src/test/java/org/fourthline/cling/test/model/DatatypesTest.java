@@ -15,6 +15,14 @@
 
 package org.fourthline.cling.test.model;
 
+import static org.testng.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
+
 import org.fourthline.cling.model.types.Base64Datatype;
 import org.fourthline.cling.model.types.DLNADoc;
 import org.fourthline.cling.model.types.Datatype;
@@ -29,15 +37,6 @@ import org.fourthline.cling.model.types.UnsignedIntegerTwoBytesDatatype;
 import org.fourthline.cling.model.types.csv.CSVBoolean;
 import org.fourthline.cling.model.types.csv.CSVString;
 import org.testng.annotations.Test;
-
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-
-import static org.testng.Assert.assertEquals;
-
 
 public class DatatypesTest {
 
@@ -138,16 +137,14 @@ public class DatatypesTest {
     @Test
     public void dateAndTimeWithZone() {
         DateTimeDatatype type =
-                new DateTimeDatatype(
-                        new String[]{"yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ssZ"},
-                        "yyyy-MM-dd'T'HH:mm:ssZ"
-                ) {
-                    @Override
-                    protected TimeZone getTimeZone() {
-                        // Set the "local" timezone to CET for the test
-                        return TimeZone.getTimeZone("CET");
-                    }
-                };
+            new DateTimeDatatype(new String[] { "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ssZ" },
+                "yyyy-MM-dd'T'HH:mm:ssZ") {
+                @Override
+                protected TimeZone getTimeZone() {
+                    // Set the "local" timezone to CET for the test
+                    return TimeZone.getTimeZone("CET");
+                }
+            };
 
         Calendar expected = Calendar.getInstance();
         expected.setTimeZone(TimeZone.getTimeZone("CET"));
@@ -198,7 +195,7 @@ public class DatatypesTest {
     @Test
     public void timeWithZone() {
 
-        DateTimeDatatype type = new DateTimeDatatype(new String[]{"HH:mm:ssZ", "HH:mm:ss"}, "HH:mm:ssZ") {
+        DateTimeDatatype type = new DateTimeDatatype(new String[] { "HH:mm:ssZ", "HH:mm:ss" }, "HH:mm:ssZ") {
             @Override
             protected TimeZone getTimeZone() {
                 // Set the "local" timezone to CET for the test
@@ -222,8 +219,8 @@ public class DatatypesTest {
     @Test
     public void base64() {
         Base64Datatype type = (Base64Datatype) Datatype.Builtin.BIN_BASE64.getDatatype();
-        assert Arrays.equals(type.valueOf("a1b2"), new byte[]{107, 86, -10});
-        assert type.getString(new byte[]{107, 86, -10}).equals("a1b2");
+        assert Arrays.equals(type.valueOf("a1b2"), new byte[] { 107, 86, -10 });
+        assert type.getString(new byte[] { 107, 86, -10 }).equals("a1b2");
     }
 
     @Test
@@ -274,16 +271,16 @@ public class DatatypesTest {
 
     @Test
     public void valueOfDouble() {
-        DoubleDatatype dt = (DoubleDatatype)Datatype.Builtin.R8.getDatatype();
+        DoubleDatatype dt = (DoubleDatatype) Datatype.Builtin.R8.getDatatype();
         Double d = dt.valueOf("1.23");
-        assertEquals(d, 1.23d);
+        assertEquals(d, Double.valueOf(1.23d));
     }
 
     @Test
     public void valueOfFloat() {
-        FloatDatatype dt = (FloatDatatype)Datatype.Builtin.R4.getDatatype();
+        FloatDatatype dt = (FloatDatatype) Datatype.Builtin.R4.getDatatype();
         Float f = dt.valueOf("1.23456");
-        assertEquals(f, 1.23456f);
+        assertEquals(f, Float.valueOf(1.23456f));
     }
 
 }

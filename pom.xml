@@ -4,10 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <prerequisites>
-        <maven>3.3.1</maven>
-    </prerequisites>
-
     <!-- ##################################################################################################### -->
     <!--
 
@@ -25,8 +21,8 @@
 
     <groupId>com.github.m3sv.cling</groupId>
     <artifactId>cling</artifactId>
+	<version>${revision}</version>
     <packaging>pom</packaging>
-    <version>2.2.0</version>
 
     <modules>
         <module>core</module>
@@ -36,7 +32,7 @@
     <!-- ##################################################################################################### -->
 
     <name>Cling</name>
-    <url>http://4thline.org/projects/cling/</url>
+    <url>https://github.com/akuhtz/cling</url>
 
     <licenses>
         <license>
@@ -64,17 +60,30 @@
             <timezone>+1</timezone>
         </developer>
     </developers>
+	
+    <scm>
+        <connection>scm:git:https://github.com/akuhtz/cling.git</connection>
+        <developerConnection>scm:git:https://github.com/akuhtz/cling.git</developerConnection>
+        <url>https://github.com/akuhtz/cling.git/</url>
+        <tag>HEAD</tag>
+    </scm>
+	
     <!-- ##################################################################################################### -->
 
     <properties>
+	
+		<revision>2.2.1-SNAPSHOT</revision>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <kotlin.version>1.4.10</kotlin.version>
+        <kotlin.version>1.4.21</kotlin.version>
         <seamless.version>1.1.3</seamless.version>
-        <lemma.version>1.1.2-SNAPSHOT</lemma.version>
-        <testng.version>6.8.21</testng.version>
+        <!-- lemma.version>1.1.2-SNAPSHOT</lemma.version -->
+        <!-- testng.version>6.14.3</testng.version -->
+        <testng.version>7.3.0</testng.version>
+		
         <android.version>4.1.1.4</android.version>
         <android.maven.plugin.version>4.1.1</android.maven.plugin.version>
         <maven.site.plugin.version>3.4</maven.site.plugin.version>
@@ -82,12 +91,16 @@
         <cdi.api.version>1.2</cdi.api.version>
         <ejb.api.version>3.0</ejb.api.version>
         <slf4j.version>1.7.12</slf4j.version>
-        <jna.version>3.2.5</jna.version>
+        <logback.version>1.2.3</logback.version>
+        <jna.version>5.6.0</jna.version>
         <gstreamer.version>1.5</gstreamer.version>
         <args4j.version>2.0.12</args4j.version>
         <weld.version>1.1.10.Final</weld.version>
         <javassist.version>3.19.0-GA</javassist.version>
         <kxml.version>2.3.0</kxml.version>
+		<okhttp.version>4.9.0</okhttp.version>
+		
+		<beanshell.version>2.0b6</beanshell.version>
 
     </properties>
 
@@ -99,6 +112,7 @@
     </repositories>
 
     <!-- ##################################################################################################### -->
+	<!--
     <pluginRepositories>
         <pluginRepository>
             <id>onejar-maven-plugin.googlecode.com</id>
@@ -108,6 +122,7 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
+	-->
 
     <!-- ##################################################################################################### -->
 
@@ -125,7 +140,7 @@
                 <!-- Unit tests -->
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.1</version>
+                    <version>2.22.2</version>
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
@@ -134,10 +149,10 @@
                 <!-- Javadoc generation settings -->
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.10.2</version>
+                    <version>3.1.1</version>
                     <configuration>
                         <quiet>true</quiet>
-                        <additionalparam>-Xdoclint:none</additionalparam>
+                        <doclint>none</doclint>
                     </configuration>
                 </plugin>
 
@@ -156,7 +171,7 @@
                 <!-- Deploy phase -->
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.8.2</version>
+                    <version>3.0.0-M1</version>
                 </plugin>
 
                 <!-- Ant fallback -->
@@ -168,7 +183,7 @@
                 <!-- Cleanup -->
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>2.6.1</version>
+                    <version>3.1.0</version>
                 </plugin>
 
                 <!-- Website lifecycle -->
@@ -209,17 +224,17 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>2.5.2</version>
+                    <version>3.0.0-M1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.3</version>
+                    <version>3.8.1</version>
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
@@ -228,14 +243,19 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.6</version>
+                    <version>3.2.0</version>
                 </plugin>
-
+				<plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>1.6</version>
+                </plugin>
             </plugins>
 
         </pluginManagement>
 
         <!-- Required for we-don't-care-about-compatibility-Maven3 'deploy' goal -->
+        <!-- 
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
@@ -243,7 +263,7 @@
                 <version>1.0-beta-7</version>
             </extension>
         </extensions>
-
+ 		-->
     </build>
 
     <!-- ##################################################################################################### -->
@@ -261,15 +281,112 @@
             <artifactId>testng</artifactId>
             <version>${testng.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
     </dependencies>
+    
+    <dependencyManagement>
+    	<dependencies>
+		
+			<dependency>
+				<groupId>com.github.m3sv.cling</groupId>
+				<artifactId>cling-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.m3sv.cling</groupId>
+				<artifactId>cling-support</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>com.github.m3sv.seamless</groupId>
+				<artifactId>seamless-swing</artifactId>
+				<version>${seamless.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.m3sv.seamless</groupId>
+				<artifactId>seamless-util</artifactId>
+				<version>${seamless.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.m3sv.seamless</groupId>
+				<artifactId>seamless-http</artifactId>
+				<version>${seamless.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.m3sv.seamless</groupId>
+				<artifactId>seamless-xml</artifactId>
+				<version>${seamless.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-server</artifactId>
+				<version>${jetty.version}</version>
+				<optional>true</optional>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-servlet</artifactId>
+				<version>${jetty.version}</version>
+				<optional>true</optional>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-client</artifactId>
+				<version>${jetty.version}</version>
+				<optional>true</optional>
+			</dependency>
+			<dependency>
+				<groupId>org.jetbrains.kotlin</groupId>
+				<artifactId>kotlin-stdlib-jdk8</artifactId>
+				<version>${kotlin.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>javax.enterprise</groupId>
+				<artifactId>cdi-api</artifactId>
+				<version>${cdi.api.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.squareup.okhttp3</groupId>
+				<artifactId>okhttp</artifactId>
+				<version>${okhttp.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>net.sf.kxml</groupId>
+				<artifactId>kxml2</artifactId>
+				<version>${kxml.version}</version>
+			</dependency>
+		
+	    	<dependency>
+	            <groupId>ch.qos.logback</groupId>
+	            <artifactId>logback-classic</artifactId>
+	            <version>${logback.version}</version>
+	        </dependency>
+
+			<dependency>
+				<groupId>org.apache-extras.beanshell</groupId>
+				<artifactId>bsh</artifactId>
+				<version>${beanshell.version}</version>
+			</dependency>
+    	
+	        <dependency>
+	            <groupId>org.testng</groupId>
+	            <artifactId>testng</artifactId>
+	            <version>${testng.version}</version>
+	            <exclusions>
+	                <exclusion>
+	                    <groupId>junit</groupId>
+	                    <artifactId>junit</artifactId>
+	                </exclusion>
+	            </exclusions>
+	        </dependency>
+    	</dependencies>
+    </dependencyManagement>
 
     <!-- ##################################################################################################### -->
 
