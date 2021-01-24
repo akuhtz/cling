@@ -86,7 +86,7 @@ import org.slf4j.LoggerFactory;
 @Alternative
 public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultUpnpServiceConfiguration.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultUpnpServiceConfiguration.class);
 
     final private int streamListenPort;
 

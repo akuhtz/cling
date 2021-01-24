@@ -49,7 +49,7 @@ import com.sun.net.httpserver.HttpServer;
  */
 public class StreamServerImpl implements StreamServer<StreamServerConfigurationImpl> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StreamServer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(StreamServerImpl.class);
 
     final protected StreamServerConfigurationImpl configuration;
 

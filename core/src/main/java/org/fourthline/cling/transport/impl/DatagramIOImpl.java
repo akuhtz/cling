@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DatagramIOImpl implements DatagramIO<DatagramIOConfigurationImpl> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DatagramIO.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DatagramIOImpl.class);
 
     /*
      * Implementation notes for unicast/multicast UDP:
@@ -117,14 +117,14 @@ public class DatagramIOImpl implements DatagramIO<DatagramIOConfigurationImpl> {
 
                 socket.receive(datagram);
 
-                try {
+                LOG
+                    .debug("UDP datagram received from: {}:{} on: {}", datagram.getAddress().getHostAddress(),
+                        datagram.getPort(), localAddress);
+
+                if (LOG.isTraceEnabled()) {
                     LOG
-                        .debug("UDP datagram received from: {}:{} on: {}, datagram.data: {}",
-                            datagram.getAddress().getHostAddress(), datagram.getPort(), localAddress,
+                        .trace("datagram.data: {}",
                             new String(datagram.getData(), datagram.getOffset(), datagram.getLength()));
-                }
-                catch (Exception ex) {
-                    LOG.warn("Log datagram failed.", ex);
                 }
 
                 router.received(datagramProcessor.read(localAddress.getAddress(), datagram));

@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class RouterImpl implements Router {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RouterImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(RouterImpl.class);
 
     protected UpnpServiceConfiguration configuration;
 
