@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.m3sv.cling</groupId>
+        <groupId>org.bidib.com.github.m3sv.cling</groupId>
         <artifactId>cling</artifactId>
         <version>${revision}</version>
     </parent>
@@ -45,7 +45,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.github.m3sv.cling</groupId>
+            <groupId>org.bidib.com.github.m3sv.cling</groupId>
             <artifactId>cling-core</artifactId>
         </dependency>
 

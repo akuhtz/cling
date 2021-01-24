@@ -15,6 +15,8 @@
 
 package org.fourthline.cling;
 
+import javax.enterprise.inject.Alternative;
+
 import org.fourthline.cling.controlpoint.ControlPoint;
 import org.fourthline.cling.controlpoint.ControlPointImpl;
 import org.fourthline.cling.protocol.ProtocolFactory;
@@ -26,22 +28,18 @@ import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.RouterException;
 import org.fourthline.cling.transport.RouterImpl;
 import org.seamless.util.Exceptions;
-
-import javax.enterprise.inject.Alternative;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default implementation of {@link UpnpService}, starts immediately on construction.
  * <p>
- * If no {@link UpnpServiceConfiguration} is provided it will automatically
- * instantiate {@link DefaultUpnpServiceConfiguration}. This configuration <strong>does not
- * work</strong> on Android! Use the {@link org.fourthline.cling.android.AndroidUpnpService}
- * application component instead.
+ * If no {@link UpnpServiceConfiguration} is provided it will automatically instantiate
+ * {@link DefaultUpnpServiceConfiguration}. This configuration <strong>does not work</strong> on Android! Use the
+ * {@link org.fourthline.cling.android.AndroidUpnpService} application component instead.
  * </p>
  * <p>
- * Override the various <tt>create...()</tt> methods to customize instantiation of protocol factory,
- * router, etc.
+ * Override the various <tt>create...()</tt> methods to customize instantiation of protocol factory, router, etc.
  * </p>
  *
  * @author Christian Bauer
@@ -49,12 +47,16 @@ import java.util.logging.Logger;
 @Alternative
 public class UpnpServiceImpl implements UpnpService {
 
-    private static Logger log = Logger.getLogger(UpnpServiceImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(UpnpServiceImpl.class.getName());
 
     protected final UpnpServiceConfiguration configuration;
+
     protected final ControlPoint controlPoint;
+
     protected final ProtocolFactory protocolFactory;
+
     protected final Registry registry;
+
     protected final Router router;
 
     public UpnpServiceImpl() {
@@ -68,9 +70,9 @@ public class UpnpServiceImpl implements UpnpService {
     public UpnpServiceImpl(UpnpServiceConfiguration configuration, RegistryListener... registryListeners) {
         this.configuration = configuration;
 
-        log.info(">>> Starting UPnP service...");
+        LOG.info(">>> Starting UPnP service...");
 
-        log.info("Using configuration: " + getConfiguration().getClass().getName());
+        LOG.info("Using configuration: " + getConfiguration().getClass().getName());
 
         // Instantiation order is important: Router needs to start its network services after registry is ready
 
@@ -85,13 +87,14 @@ public class UpnpServiceImpl implements UpnpService {
 
         try {
             this.router.enable();
-        } catch (RouterException ex) {
+        }
+        catch (RouterException ex) {
             throw new RuntimeException("Enabling network router failed: " + ex, ex);
         }
 
         this.controlPoint = createControlPoint(protocolFactory, registry);
 
-        log.info("<<< UPnP service started successfully");
+        LOG.info("<<< UPnP service started successfully");
     }
 
     protected ProtocolFactory createProtocolFactory() {
@@ -110,26 +113,32 @@ public class UpnpServiceImpl implements UpnpService {
         return new ControlPointImpl(getConfiguration(), protocolFactory, registry);
     }
 
+    @Override
     public UpnpServiceConfiguration getConfiguration() {
         return configuration;
     }
 
+    @Override
     public ControlPoint getControlPoint() {
         return controlPoint;
     }
 
+    @Override
     public ProtocolFactory getProtocolFactory() {
         return protocolFactory;
     }
 
+    @Override
     public Registry getRegistry() {
         return registry;
     }
 
+    @Override
     public Router getRouter() {
         return router;
     }
 
+    @Override
     synchronized public void shutdown() {
         shutdown(false);
     }
@@ -138,17 +147,18 @@ public class UpnpServiceImpl implements UpnpService {
         Runnable shutdown = new Runnable() {
             @Override
             public void run() {
-                log.info(">>> Shutting down UPnP service...");
+                LOG.info(">>> Shutting down UPnP service...");
                 shutdownRegistry();
                 shutdownRouter();
                 shutdownConfiguration();
-                log.info("<<< UPnP service shutdown completed");
+                LOG.info("<<< UPnP service shutdown completed");
             }
         };
         if (separateThread) {
             // This is not a daemon thread, it has to complete!
             new Thread(shutdown).start();
-        } else {
+        }
+        else {
             shutdown.run();
         }
     }
@@ -160,12 +170,14 @@ public class UpnpServiceImpl implements UpnpService {
     protected void shutdownRouter() {
         try {
             getRouter().shutdown();
-        } catch (RouterException ex) {
+        }
+        catch (RouterException ex) {
             Throwable cause = Exceptions.unwrap(ex);
             if (cause instanceof InterruptedException) {
-                log.log(Level.INFO, "Router shutdown was interrupted: " + ex, cause);
-            } else {
-                log.log(Level.SEVERE, "Router error on shutdown: " + ex, cause);
+                LOG.info("Router shutdown was interrupted: " + ex, cause);
+            }
+            else {
+                LOG.warn("Router error on shutdown: " + ex, cause);
             }
         }
     }

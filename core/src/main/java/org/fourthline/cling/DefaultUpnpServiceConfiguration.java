@@ -15,6 +15,17 @@
 
 package org.fourthline.cling;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.enterprise.inject.Alternative;
+
 import org.fourthline.cling.binding.xml.DeviceDescriptorBinder;
 import org.fourthline.cling.binding.xml.ServiceDescriptorBinder;
 import org.fourthline.cling.binding.xml.UDA10DeviceDescriptorBinderImpl;
@@ -46,17 +57,8 @@ import org.fourthline.cling.transport.spi.SOAPActionProcessor;
 import org.fourthline.cling.transport.spi.StreamClient;
 import org.fourthline.cling.transport.spi.StreamServer;
 import org.seamless.util.Exceptions;
-
-import javax.enterprise.inject.Alternative;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default configuration data of a typical UPnP stack.
@@ -65,20 +67,18 @@ import java.util.logging.Logger;
  * {@link org.fourthline.cling.transport.impl}.
  * </p>
  * <p>
- * This configuration utilizes the DOM default descriptor binders found in
- * {@link org.fourthline.cling.binding.xml}.
+ * This configuration utilizes the DOM default descriptor binders found in {@link org.fourthline.cling.binding.xml}.
  * </p>
  * <p>
- * The thread <code>Executor</code> is an <code>Executors.newCachedThreadPool()</code> with
- * a custom {@link ClingThreadFactory} (it only sets a thread name).
+ * The thread <code>Executor</code> is an <code>Executors.newCachedThreadPool()</code> with a custom
+ * {@link ClingThreadFactory} (it only sets a thread name).
  * </p>
  * <p>
- * Note that this pool is effectively unlimited, so the number of threads will
- * grow (and shrink) as needed - or restricted by your JVM.
+ * Note that this pool is effectively unlimited, so the number of threads will grow (and shrink) as needed - or
+ * restricted by your JVM.
  * </p>
  * <p>
- * The default {@link org.fourthline.cling.model.Namespace} is configured without any
- * base path or prefix.
+ * The default {@link org.fourthline.cling.model.Namespace} is configured without any base path or prefix.
  * </p>
  *
  * @author Christian Bauer
@@ -86,17 +86,20 @@ import java.util.logging.Logger;
 @Alternative
 public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration {
 
-    private static Logger log = Logger.getLogger(DefaultUpnpServiceConfiguration.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultUpnpServiceConfiguration.class.getName());
 
     final private int streamListenPort;
 
     final private ExecutorService defaultExecutorService;
 
     final private DatagramProcessor datagramProcessor;
+
     final private SOAPActionProcessor soapActionProcessor;
+
     final private GENAEventProcessor genaEventProcessor;
 
     final private DeviceDescriptorBinder deviceDescriptorBinderUDA10;
+
     final private ServiceDescriptorBinder serviceDescriptorBinderUDA10;
 
     final private Namespace namespace;
@@ -118,7 +121,8 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
 
     protected DefaultUpnpServiceConfiguration(int streamListenPort, boolean checkRuntime) {
         if (checkRuntime && ModelUtil.ANDROID_RUNTIME) {
-            throw new Error("Unsupported runtime environment, use org.fourthline.cling.android.AndroidUpnpServiceConfiguration");
+            throw new Error(
+                "Unsupported runtime environment, use org.fourthline.cling.android.AndroidUpnpServiceConfiguration");
         }
 
         this.streamListenPort = streamListenPort;
@@ -135,67 +139,68 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
         namespace = createNamespace();
     }
 
+    @Override
     public DatagramProcessor getDatagramProcessor() {
         return datagramProcessor;
     }
 
+    @Override
     public SOAPActionProcessor getSoapActionProcessor() {
         return soapActionProcessor;
     }
 
+    @Override
     public GENAEventProcessor getGenaEventProcessor() {
         return genaEventProcessor;
     }
 
+    @Override
     public StreamClient createStreamClient() {
-        return new StreamClientImpl(
-            new StreamClientConfigurationImpl(
-                getSyncProtocolExecutorService()
-            )
-        );
+        return new StreamClientImpl(new StreamClientConfigurationImpl(getSyncProtocolExecutorService()));
     }
 
+    @Override
     public MulticastReceiver createMulticastReceiver(NetworkAddressFactory networkAddressFactory) {
-        return new MulticastReceiverImpl(
-                new MulticastReceiverConfigurationImpl(
-                        networkAddressFactory.getMulticastGroup(),
-                        networkAddressFactory.getMulticastPort()
-                )
-        );
+        return new MulticastReceiverImpl(new MulticastReceiverConfigurationImpl(
+            networkAddressFactory.getMulticastGroup(), networkAddressFactory.getMulticastPort()));
     }
 
+    @Override
     public DatagramIO createDatagramIO(NetworkAddressFactory networkAddressFactory) {
         return new DatagramIOImpl(new DatagramIOConfigurationImpl());
     }
 
+    @Override
     public StreamServer createStreamServer(NetworkAddressFactory networkAddressFactory) {
-        return new StreamServerImpl(
-                new StreamServerConfigurationImpl(
-                        networkAddressFactory.getStreamListenPort()
-                )
-        );
+        return new StreamServerImpl(new StreamServerConfigurationImpl(networkAddressFactory.getStreamListenPort()));
     }
 
+    @Override
     public Executor getMulticastReceiverExecutor() {
         return getDefaultExecutorService();
     }
 
+    @Override
     public Executor getDatagramIOExecutor() {
         return getDefaultExecutorService();
     }
 
+    @Override
     public ExecutorService getStreamServerExecutorService() {
         return getDefaultExecutorService();
     }
 
+    @Override
     public DeviceDescriptorBinder getDeviceDescriptorBinderUDA10() {
         return deviceDescriptorBinderUDA10;
     }
 
+    @Override
     public ServiceDescriptorBinder getServiceDescriptorBinderUDA10() {
         return serviceDescriptorBinderUDA10;
     }
 
+    @Override
     public ServiceType[] getExclusiveServiceTypes() {
         return new ServiceType[0];
     }
@@ -203,14 +208,17 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
     /**
      * @return Defaults to <code>false</code>.
      */
-	public boolean isReceivedSubscriptionTimeoutIgnored() {
-		return false;
-	}
+    @Override
+    public boolean isReceivedSubscriptionTimeoutIgnored() {
+        return false;
+    }
 
+    @Override
     public UpnpHeaders getDescriptorRetrievalHeaders(RemoteDeviceIdentity identity) {
         return null;
     }
 
+    @Override
     public UpnpHeaders getEventSubscriptionHeaders(RemoteService service) {
         return null;
     }
@@ -218,6 +226,7 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
     /**
      * @return Defaults to 1000 milliseconds.
      */
+    @Override
     public int getRegistryMaintenanceIntervalMillis() {
         return 1000;
     }
@@ -225,40 +234,49 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
     /**
      * @return Defaults to zero, disabling ALIVE flooding.
      */
+    @Override
     public int getAliveIntervalMillis() {
-    	return 0;
+        return 0;
     }
 
+    @Override
     public Integer getRemoteDeviceMaxAgeSeconds() {
         return null;
     }
 
+    @Override
     public Executor getAsyncProtocolExecutor() {
         return getDefaultExecutorService();
     }
 
+    @Override
     public ExecutorService getSyncProtocolExecutorService() {
         return getDefaultExecutorService();
     }
 
+    @Override
     public Namespace getNamespace() {
         return namespace;
     }
 
+    @Override
     public Executor getRegistryMaintainerExecutor() {
         return getDefaultExecutorService();
     }
 
+    @Override
     public Executor getRegistryListenerExecutor() {
         return getDefaultExecutorService();
     }
 
+    @Override
     public NetworkAddressFactory createNetworkAddressFactory() {
         return createNetworkAddressFactory(streamListenPort);
     }
 
+    @Override
     public void shutdown() {
-        log.fine("Shutting down default executor service");
+        LOG.trace("Shutting down default executor service");
         getDefaultExecutorService().shutdownNow();
     }
 
@@ -301,29 +319,21 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
     public static class ClingExecutor extends ThreadPoolExecutor {
 
         public ClingExecutor() {
-            this(new ClingThreadFactory(),
-                 new ThreadPoolExecutor.DiscardPolicy() {
-                     // The pool is unbounded but rejections will happen during shutdown
-                     @Override
-                     public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
-                         // Log and discard
-                         log.info("Thread pool rejected execution of " + runnable.getClass());
-                         super.rejectedExecution(runnable, threadPoolExecutor);
-                     }
-                 }
-            );
+            this(new ClingThreadFactory(), new ThreadPoolExecutor.DiscardPolicy() {
+                // The pool is unbounded but rejections will happen during shutdown
+                @Override
+                public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+                    // Log and discard
+                    LOG.info("Thread pool rejected execution of " + runnable.getClass());
+                    super.rejectedExecution(runnable, threadPoolExecutor);
+                }
+            });
         }
 
         public ClingExecutor(ThreadFactory threadFactory, RejectedExecutionHandler rejectedHandler) {
             // This is the same as Executors.newCachedThreadPool
-            super(0,
-                  Integer.MAX_VALUE,
-                  60L,
-                  TimeUnit.SECONDS,
-                  new SynchronousQueue<Runnable>(),
-                  threadFactory,
-                  rejectedHandler
-            );
+            super(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), threadFactory,
+                rejectedHandler);
         }
 
         @Override
@@ -338,8 +348,8 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
                     return;
                 }
                 // Log only
-                log.warning("Thread terminated " + runnable + " abruptly with exception: " + throwable);
-                log.warning("Root cause: " + cause);
+                LOG.warn("Thread terminated " + runnable + " abruptly with exception: " + throwable);
+                LOG.warn("Root cause:", cause);
             }
         }
     }
@@ -348,7 +358,9 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
     public static class ClingThreadFactory implements ThreadFactory {
 
         protected final ThreadGroup group;
+
         protected final AtomicInteger threadNumber = new AtomicInteger(1);
+
         protected final String namePrefix = "cling-";
 
         public ClingThreadFactory() {
@@ -356,12 +368,9 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
             group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
         }
 
+        @Override
         public Thread newThread(Runnable r) {
-            Thread t = new Thread(
-                    group, r,
-                    namePrefix + threadNumber.getAndIncrement(),
-                    0
-            );
+            Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
             if (t.isDaemon())
                 t.setDaemon(false);
             if (t.getPriority() != Thread.NORM_PRIORITY)
