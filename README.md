@@ -31,9 +31,9 @@ If your build fails with Android/dex packaging errors, you forgot the clean.
 ````
 <dependencies>
   <dependency>
-    <groupId>org.fourthline.cling</groupId>
+    <groupId>org.bidib.com.github.m3sv.cling</groupId>
     <artifactId>cling-core</artifactId>
-    <version>2.2.0</version>
+    <version>2.2.1-SNAPSHOT</version>
   </dependency>
 </dependencies>
 ````
