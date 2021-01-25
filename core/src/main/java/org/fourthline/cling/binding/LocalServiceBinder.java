@@ -27,24 +27,32 @@ import org.fourthline.cling.model.types.ServiceType;
 public interface LocalServiceBinder {
 
     /**
-     * @param clazz The Java class that is the source of the service metadata.
+     * @param clazz
+     *            The Java class that is the source of the service metadata.
      * @return The produced metadata.
-     * @throws LocalServiceBindingException If binding failed.
+     * @throws LocalServiceBindingException
+     *             If binding failed.
      */
-    public LocalService read(Class<?> clazz) throws LocalServiceBindingException;
+    public <T> LocalService<T> read(Class<?> clazz) throws LocalServiceBindingException;
 
     /**
      *
-     * @param clazz The Java class that is the source of the service metadata.
-     * @param id The pre-defined identifier of the service.
-     * @param type The pre-defined type of the service.
-     * @param supportsQueryStateVariables <code>true</code> if the service should support the
-     *                                    deprecated "query any state variable value" action.
-     * @param stringConvertibleTypes A list of Java classes which map directly to string-typed
-     *                               UPnP state variables.
+     * @param clazz
+     *            The Java class that is the source of the service metadata.
+     * @param id
+     *            The pre-defined identifier of the service.
+     * @param type
+     *            The pre-defined type of the service.
+     * @param supportsQueryStateVariables
+     *            <code>true</code> if the service should support the deprecated "query any state variable value"
+     *            action.
+     * @param stringConvertibleTypes
+     *            A list of Java classes which map directly to string-typed UPnP state variables.
      * @return The produced metadata.
-     * @throws LocalServiceBindingException If binding failed.
+     * @throws LocalServiceBindingException
+     *             If binding failed.
      */
-    public LocalService read(Class<?> clazz, ServiceId id, ServiceType type,
-                              boolean supportsQueryStateVariables, Class[] stringConvertibleTypes) throws LocalServiceBindingException;
+    public <T> LocalService<T> read(
+        Class<?> clazz, ServiceId id, ServiceType type, boolean supportsQueryStateVariables,
+        Class[] stringConvertibleTypes) throws LocalServiceBindingException;
 }
