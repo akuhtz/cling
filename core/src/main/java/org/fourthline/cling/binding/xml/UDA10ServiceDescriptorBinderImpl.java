@@ -15,11 +15,24 @@
 
 package org.fourthline.cling.binding.xml;
 
+import static org.fourthline.cling.model.XMLUtil.appendNewElement;
+import static org.fourthline.cling.model.XMLUtil.appendNewElementIfNotNull;
+
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.fourthline.cling.binding.staging.MutableAction;
 import org.fourthline.cling.binding.staging.MutableActionArgument;
 import org.fourthline.cling.binding.staging.MutableAllowedValueRange;
 import org.fourthline.cling.binding.staging.MutableService;
 import org.fourthline.cling.binding.staging.MutableStateVariable;
+import org.fourthline.cling.binding.xml.Descriptor.Service.ATTRIBUTE;
+import org.fourthline.cling.binding.xml.Descriptor.Service.ELEMENT;
 import org.fourthline.cling.model.ValidationException;
 import org.fourthline.cling.model.XMLUtil;
 import org.fourthline.cling.model.meta.Action;
@@ -31,6 +44,8 @@ import org.fourthline.cling.model.meta.StateVariable;
 import org.fourthline.cling.model.meta.StateVariableEventDetails;
 import org.fourthline.cling.model.types.CustomDatatype;
 import org.fourthline.cling.model.types.Datatype;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -40,19 +55,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.logging.Logger;
-
-import static org.fourthline.cling.binding.xml.Descriptor.Service.ATTRIBUTE;
-import static org.fourthline.cling.binding.xml.Descriptor.Service.ELEMENT;
-import static org.fourthline.cling.model.XMLUtil.appendNewElement;
-import static org.fourthline.cling.model.XMLUtil.appendNewElementIfNotNull;
-
 /**
  * Implementation based on JAXP DOM.
  *
@@ -60,40 +62,46 @@ import static org.fourthline.cling.model.XMLUtil.appendNewElementIfNotNull;
  */
 public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder, ErrorHandler {
 
-    private static Logger log = Logger.getLogger(ServiceDescriptorBinder.class.getName());
+    private static Logger LOG = LoggerFactory.getLogger(UDA10ServiceDescriptorBinderImpl.class);
 
-    public <S extends Service> S describe(S undescribedService, String descriptorXml) throws DescriptorBindingException, ValidationException {
+    @Override
+    public <S extends Service> S describe(S undescribedService, String descriptorXml)
+        throws DescriptorBindingException, ValidationException {
         if (descriptorXml == null || descriptorXml.length() == 0) {
             throw new DescriptorBindingException("Null or empty descriptor");
         }
 
         try {
-            log.fine("Populating service from XML descriptor: " + undescribedService);
+            LOG.debug("Populating service from XML descriptor: {}", undescribedService);
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             DocumentBuilder documentBuilder = factory.newDocumentBuilder();
             documentBuilder.setErrorHandler(this);
 
-            Document d = documentBuilder.parse(
-                new InputSource(
-                    // TODO: UPNP VIOLATION: Virgin Media Superhub sends trailing spaces/newlines after last XML element, need to trim()
-                    new StringReader(descriptorXml.trim())
-                )
-            );
+            Document d =
+                documentBuilder
+                    .parse(new InputSource(
+                        // TODO: UPNP VIOLATION: Virgin Media Superhub sends trailing spaces/newlines after last XML
+                        // element, need to trim()
+                        new StringReader(descriptorXml.trim())));
 
             return describe(undescribedService, d);
 
-        } catch (ValidationException ex) {
+        }
+        catch (ValidationException ex) {
             throw ex;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             throw new DescriptorBindingException("Could not parse service descriptor: " + ex.toString(), ex);
         }
     }
 
-    public <S extends Service> S describe(S undescribedService, Document dom) throws DescriptorBindingException, ValidationException {
+    @Override
+    public <S extends Service> S describe(S undescribedService, Document dom)
+        throws DescriptorBindingException, ValidationException {
         try {
-            log.fine("Populating service from DOM: " + undescribedService);
+            LOG.debug("Populating service from DOM: {}", undescribedService);
 
             // Read the XML into a mutable descriptor graph
             MutableService descriptor = new MutableService();
@@ -106,15 +114,18 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
             // Build the immutable descriptor graph
             return buildInstance(undescribedService, descriptor);
 
-        } catch (ValidationException ex) {
+        }
+        catch (ValidationException ex) {
             throw ex;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             throw new DescriptorBindingException("Could not parse service DOM: " + ex.toString(), ex);
         }
     }
 
-    protected <S extends Service> S buildInstance(S undescribedService, MutableService descriptor) throws ValidationException {
-        return (S)descriptor.build(undescribedService.getDevice());
+    protected <S extends Service> S buildInstance(S undescribedService, MutableService descriptor)
+        throws ValidationException {
+        return (S) descriptor.build(undescribedService.getDevice());
     }
 
     protected void hydrateBasic(MutableService descriptor, Service undescribedService) {
@@ -128,8 +139,7 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
         }
     }
 
-    protected void hydrateRoot(MutableService descriptor, Element rootElement)
-            throws DescriptorBindingException {
+    protected void hydrateRoot(MutableService descriptor, Element rootElement) throws DescriptorBindingException {
 
         // We don't check the XMLNS, nobody bothers anyway...
 
@@ -150,37 +160,33 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
                 // the spec versions can be declared on devices _AND_ on their services should have their fingers
                 // broken so they never touch a keyboard again.
                 // hydrateSpecVersion(descriptor, rootChild);
-            } else if (ELEMENT.actionList.equals(rootChild)) {
+            }
+            else if (ELEMENT.actionList.equals(rootChild)) {
                 hydrateActionList(descriptor, rootChild);
-            } else if (ELEMENT.serviceStateTable.equals(rootChild)) {
+            }
+            else if (ELEMENT.serviceStateTable.equals(rootChild)) {
                 hydrateServiceStateTableList(descriptor, rootChild);
-            } else {
-                log.finer("Ignoring unknown element: " + rootChild.getNodeName());
+            }
+            else {
+                LOG.debug("Ignoring unknown element: {}", rootChild.getNodeName());
             }
         }
 
     }
 
     /*
-    public void hydrateSpecVersion(MutableService descriptor, Node specVersionNode)
-            throws DescriptorBindingException {
-
-        NodeList specVersionChildren = specVersionNode.getChildNodes();
-        for (int i = 0; i < specVersionChildren.getLength(); i++) {
-            Node specVersionChild = specVersionChildren.item(i);
-
-            if (specVersionChild.getNodeType() != Node.ELEMENT_NODE)
-                continue;
-
-            MutableUDAVersion version = new MutableUDAVersion();
-            if (ELEMENT.major.equals(specVersionChild)) {
-                version.major = Integer.valueOf(XMLUtil.getTextContent(specVersionChild));
-            } else if (ELEMENT.minor.equals(specVersionChild)) {
-                version.minor = Integer.valueOf(XMLUtil.getTextContent(specVersionChild));
-            }
-        }
-    }
-    */
+     * public void hydrateSpecVersion(MutableService descriptor, Node specVersionNode) throws DescriptorBindingException
+     * {
+     * 
+     * NodeList specVersionChildren = specVersionNode.getChildNodes(); for (int i = 0; i <
+     * specVersionChildren.getLength(); i++) { Node specVersionChild = specVersionChildren.item(i);
+     * 
+     * if (specVersionChild.getNodeType() != Node.ELEMENT_NODE) continue;
+     * 
+     * MutableUDAVersion version = new MutableUDAVersion(); if (ELEMENT.major.equals(specVersionChild)) { version.major
+     * = Integer.valueOf(XMLUtil.getTextContent(specVersionChild)); } else if (ELEMENT.minor.equals(specVersionChild)) {
+     * version.minor = Integer.valueOf(XMLUtil.getTextContent(specVersionChild)); } } }
+     */
 
     public void hydrateActionList(MutableService descriptor, Node actionListNode) throws DescriptorBindingException {
 
@@ -210,8 +216,8 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
             if (ELEMENT.name.equals(actionNodeChild)) {
                 action.name = XMLUtil.getTextContent(actionNodeChild);
-            } else if (ELEMENT.argumentList.equals(actionNodeChild)) {
-
+            }
+            else if (ELEMENT.argumentList.equals(actionNodeChild)) {
 
                 NodeList argumentChildren = actionNodeChild.getChildNodes();
                 for (int j = 0; j < argumentChildren.getLength(); j++) {
@@ -240,18 +246,25 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
             if (ELEMENT.name.equals(argumentNodeChild)) {
                 actionArgument.name = XMLUtil.getTextContent(argumentNodeChild);
-            } else if (ELEMENT.direction.equals(argumentNodeChild)) {
+            }
+            else if (ELEMENT.direction.equals(argumentNodeChild)) {
                 String directionString = XMLUtil.getTextContent(argumentNodeChild);
                 try {
-                    actionArgument.direction = ActionArgument.Direction.valueOf(directionString.toUpperCase(Locale.ROOT));
-                } catch (IllegalArgumentException ex) {
+                    actionArgument.direction =
+                        ActionArgument.Direction.valueOf(directionString.toUpperCase(Locale.ROOT));
+                }
+                catch (IllegalArgumentException ex) {
                     // TODO: UPNP VIOLATION: Pelco SpectraIV-IP uses illegal value INOUT
-                    log.warning("UPnP specification violation: Invalid action argument direction, assuming 'IN': " + directionString);
+                    LOG
+                        .warn("UPnP specification violation: Invalid action argument direction, assuming 'IN': {}",
+                            directionString);
                     actionArgument.direction = ActionArgument.Direction.IN;
                 }
-            } else if (ELEMENT.relatedStateVariable.equals(argumentNodeChild)) {
+            }
+            else if (ELEMENT.relatedStateVariable.equals(argumentNodeChild)) {
                 actionArgument.relatedStateVariable = XMLUtil.getTextContent(argumentNodeChild);
-            } else if (ELEMENT.retval.equals(argumentNodeChild)) {
+            }
+            else if (ELEMENT.retval.equals(argumentNodeChild)) {
                 actionArgument.retval = true;
             }
         }
@@ -276,10 +289,10 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
     public void hydrateStateVariable(MutableStateVariable stateVariable, Element stateVariableElement) {
 
-        stateVariable.eventDetails = new StateVariableEventDetails(
-                stateVariableElement.getAttribute("sendEvents") != null &&
-                        stateVariableElement.getAttribute(ATTRIBUTE.sendEvents.toString()).toUpperCase(Locale.ROOT).equals("YES")
-        );
+        stateVariable.eventDetails =
+            new StateVariableEventDetails(
+                stateVariableElement.getAttribute("sendEvents") != null && stateVariableElement
+                    .getAttribute(ATTRIBUTE.sendEvents.toString()).toUpperCase(Locale.ROOT).equals("YES"));
 
         NodeList stateVariableChildren = stateVariableElement.getChildNodes();
         for (int i = 0; i < stateVariableChildren.getLength(); i++) {
@@ -290,13 +303,16 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
             if (ELEMENT.name.equals(stateVariableChild)) {
                 stateVariable.name = XMLUtil.getTextContent(stateVariableChild);
-            } else if (ELEMENT.dataType.equals(stateVariableChild)) {
+            }
+            else if (ELEMENT.dataType.equals(stateVariableChild)) {
                 String dtName = XMLUtil.getTextContent(stateVariableChild);
                 Datatype.Builtin builtin = Datatype.Builtin.getByDescriptorName(dtName);
                 stateVariable.dataType = builtin != null ? builtin.getDatatype() : new CustomDatatype(dtName);
-            } else if (ELEMENT.defaultValue.equals(stateVariableChild)) {
+            }
+            else if (ELEMENT.defaultValue.equals(stateVariableChild)) {
                 stateVariable.defaultValue = XMLUtil.getTextContent(stateVariableChild);
-            } else if (ELEMENT.allowedValueList.equals(stateVariableChild)) {
+            }
+            else if (ELEMENT.allowedValueList.equals(stateVariableChild)) {
 
                 List<String> allowedValues = new ArrayList<>();
 
@@ -313,7 +329,8 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
                 stateVariable.allowedValues = allowedValues;
 
-            } else if (ELEMENT.allowedValueRange.equals(stateVariableChild)) {
+            }
+            else if (ELEMENT.allowedValueRange.equals(stateVariableChild)) {
 
                 MutableAllowedValueRange range = new MutableAllowedValueRange();
 
@@ -327,17 +344,22 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
                     if (ELEMENT.minimum.equals(allowedValueRangeChild)) {
                         try {
                             range.minimum = Long.valueOf(XMLUtil.getTextContent(allowedValueRangeChild));
-                        } catch (Exception ex) {
                         }
-                    } else if (ELEMENT.maximum.equals(allowedValueRangeChild)) {
+                        catch (Exception ex) {
+                        }
+                    }
+                    else if (ELEMENT.maximum.equals(allowedValueRangeChild)) {
                         try {
                             range.maximum = Long.valueOf(XMLUtil.getTextContent(allowedValueRangeChild));
-                        } catch (Exception ex) {
                         }
-                    } else if (ELEMENT.step.equals(allowedValueRangeChild)) {
+                        catch (Exception ex) {
+                        }
+                    }
+                    else if (ELEMENT.step.equals(allowedValueRangeChild)) {
                         try {
                             range.step = Long.valueOf(XMLUtil.getTextContent(allowedValueRangeChild));
-                        } catch (Exception ex) {
+                        }
+                        catch (Exception ex) {
                         }
                     }
                 }
@@ -347,21 +369,24 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
         }
     }
 
+    @Override
     public String generate(Service service) throws DescriptorBindingException {
         try {
-            log.fine("Generating XML descriptor from service model: " + service);
+            LOG.debug("Generating XML descriptor from service model: {}", service);
 
             return XMLUtil.documentToString(buildDOM(service));
 
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             throw new DescriptorBindingException("Could not build DOM: " + ex.getMessage(), ex);
         }
     }
 
+    @Override
     public Document buildDOM(Service service) throws DescriptorBindingException {
 
         try {
-            log.fine("Generating XML descriptor from service model: " + service);
+            LOG.debug("Generating XML descriptor from service model: {}", service);
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -371,7 +396,8 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
             return d;
 
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             throw new DescriptorBindingException("Could not generate service descriptor: " + ex.getMessage(), ex);
         }
     }
@@ -390,8 +416,10 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
     private void generateSpecVersion(Service serviceModel, Document descriptor, Element rootElement) {
         Element specVersionElement = appendNewElement(descriptor, rootElement, ELEMENT.specVersion);
-        appendNewElementIfNotNull(descriptor, specVersionElement, ELEMENT.major, serviceModel.getDevice().getVersion().getMajor());
-        appendNewElementIfNotNull(descriptor, specVersionElement, ELEMENT.minor, serviceModel.getDevice().getVersion().getMinor());
+        appendNewElementIfNotNull(descriptor, specVersionElement, ELEMENT.major,
+            serviceModel.getDevice().getVersion().getMajor());
+        appendNewElementIfNotNull(descriptor, specVersionElement, ELEMENT.minor,
+            serviceModel.getDevice().getVersion().getMinor());
     }
 
     private void generateActionList(Service serviceModel, Document descriptor, Element scpdElement) {
@@ -423,13 +451,17 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
         Element actionArgumentElement = appendNewElement(descriptor, actionElement, ELEMENT.argument);
 
         appendNewElementIfNotNull(descriptor, actionArgumentElement, ELEMENT.name, actionArgument.getName());
-        appendNewElementIfNotNull(descriptor, actionArgumentElement, ELEMENT.direction, actionArgument.getDirection().toString().toLowerCase(Locale.ROOT));
+        appendNewElementIfNotNull(descriptor, actionArgumentElement, ELEMENT.direction,
+            actionArgument.getDirection().toString().toLowerCase(Locale.ROOT));
         if (actionArgument.isReturnValue()) {
             // TODO: UPNP VIOLATION: WMP12 will discard RenderingControl service if it contains <retval> tags
-            log.warning("UPnP specification violation: Not producing <retval> element to be compatible with WMP12: " + actionArgument);
+            LOG
+                .warn("UPnP specification violation: Not producing <retval> element to be compatible with WMP12: {}",
+                    actionArgument);
             // appendNewElement(descriptor, actionArgumentElement, ELEMENT.retval);
         }
-        appendNewElementIfNotNull(descriptor, actionArgumentElement, ELEMENT.relatedStateVariable, actionArgument.getRelatedStateVariableName());
+        appendNewElementIfNotNull(descriptor, actionArgumentElement, ELEMENT.relatedStateVariable,
+            actionArgument.getRelatedStateVariableName());
     }
 
     private void generateServiceStateTable(Service serviceModel, Document descriptor, Element scpdElement) {
@@ -441,7 +473,8 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
         }
     }
 
-    private void generateStateVariable(StateVariable stateVariable, Document descriptor, Element serviveStateTableElement) {
+    private void generateStateVariable(
+        StateVariable stateVariable, Document descriptor, Element serviveStateTableElement) {
 
         Element stateVariableElement = appendNewElement(descriptor, serviveStateTableElement, ELEMENT.stateVariable);
 
@@ -449,56 +482,59 @@ public class UDA10ServiceDescriptorBinderImpl implements ServiceDescriptorBinder
 
         if (stateVariable.getTypeDetails().getDatatype() instanceof CustomDatatype) {
             appendNewElementIfNotNull(descriptor, stateVariableElement, ELEMENT.dataType,
-                    ((CustomDatatype)stateVariable.getTypeDetails().getDatatype()).getName());
-        } else {
+                ((CustomDatatype) stateVariable.getTypeDetails().getDatatype()).getName());
+        }
+        else {
             appendNewElementIfNotNull(descriptor, stateVariableElement, ELEMENT.dataType,
-                    stateVariable.getTypeDetails().getDatatype().getBuiltin().getDescriptorName());
+                stateVariable.getTypeDetails().getDatatype().getBuiltin().getDescriptorName());
         }
 
         appendNewElementIfNotNull(descriptor, stateVariableElement, ELEMENT.defaultValue,
-                stateVariable.getTypeDetails().getDefaultValue());
+            stateVariable.getTypeDetails().getDefaultValue());
 
         // The default is 'yes' but we generate it anyway just to be sure
         if (stateVariable.getEventDetails().isSendEvents()) {
             stateVariableElement.setAttribute(ATTRIBUTE.sendEvents.toString(), "yes");
-        } else {
+        }
+        else {
             stateVariableElement.setAttribute(ATTRIBUTE.sendEvents.toString(), "no");
         }
 
         if (stateVariable.getTypeDetails().getAllowedValues() != null) {
-            Element allowedValueListElement = appendNewElement(descriptor, stateVariableElement, ELEMENT.allowedValueList);
+            Element allowedValueListElement =
+                appendNewElement(descriptor, stateVariableElement, ELEMENT.allowedValueList);
             for (String allowedValue : stateVariable.getTypeDetails().getAllowedValues()) {
                 appendNewElementIfNotNull(descriptor, allowedValueListElement, ELEMENT.allowedValue, allowedValue);
             }
         }
 
         if (stateVariable.getTypeDetails().getAllowedValueRange() != null) {
-            Element allowedValueRangeElement = appendNewElement(descriptor, stateVariableElement, ELEMENT.allowedValueRange);
-            appendNewElementIfNotNull(
-                    descriptor, allowedValueRangeElement, ELEMENT.minimum, stateVariable.getTypeDetails().getAllowedValueRange().getMinimum()
-            );
-            appendNewElementIfNotNull(
-                    descriptor, allowedValueRangeElement, ELEMENT.maximum, stateVariable.getTypeDetails().getAllowedValueRange().getMaximum()
-            );
+            Element allowedValueRangeElement =
+                appendNewElement(descriptor, stateVariableElement, ELEMENT.allowedValueRange);
+            appendNewElementIfNotNull(descriptor, allowedValueRangeElement, ELEMENT.minimum,
+                stateVariable.getTypeDetails().getAllowedValueRange().getMinimum());
+            appendNewElementIfNotNull(descriptor, allowedValueRangeElement, ELEMENT.maximum,
+                stateVariable.getTypeDetails().getAllowedValueRange().getMaximum());
             if (stateVariable.getTypeDetails().getAllowedValueRange().getStep() >= 1l) {
-                appendNewElementIfNotNull(
-                        descriptor, allowedValueRangeElement, ELEMENT.step, stateVariable.getTypeDetails().getAllowedValueRange().getStep()
-                );
+                appendNewElementIfNotNull(descriptor, allowedValueRangeElement, ELEMENT.step,
+                    stateVariable.getTypeDetails().getAllowedValueRange().getStep());
             }
         }
 
     }
 
+    @Override
     public void warning(SAXParseException e) throws SAXException {
-        log.warning(e.toString());
+        LOG.warn("SAXParseException detected: {}", e.toString());
     }
 
+    @Override
     public void error(SAXParseException e) throws SAXException {
         throw e;
     }
 
+    @Override
     public void fatalError(SAXParseException e) throws SAXException {
         throw e;
     }
 }
-
