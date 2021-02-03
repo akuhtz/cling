@@ -332,7 +332,8 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
 
         public ClingExecutor(ThreadFactory threadFactory, RejectedExecutionHandler rejectedHandler) {
             // This is the same as Executors.newCachedThreadPool
-            super(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), threadFactory,
+            // set max 5 threads ...
+            super(0, 5 /* Integer.MAX_VALUE */, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), threadFactory,
                 rejectedHandler);
         }
 
